@@ -41,6 +41,9 @@ public class LuaObject extends LuaTable {
         LuaValue v = super.rawget(key);
         if(v.isnil() && key.isstring() && !key.isnumber()) {
             String s = key.tojstring();
+            if(arrayClass != null && s.equals("length")) {
+                return LuaNumber.valueOf(Array.getLength(instance));
+            }
             for(Field f : fields) {
                 if(f.getName().equals(s)) {
                     try {
@@ -88,8 +91,11 @@ public class LuaObject extends LuaTable {
 
     @Override
     public void set(LuaValue key, LuaValue value) {
-        if(key.isstring()) {
+        if(key.isstring() && !key.isnumber()) {
             String s = key.tojstring();
+            if(arrayClass != null && s.equals("length")) {
+                throw new LuaError("Java array length cannot be modified");
+            }
             for(Field f : fields) {
                 if(f.getName().equals(s)) {
                     try {

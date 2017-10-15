@@ -15,6 +15,7 @@ import org.luaj.vm2.lib.jse.CoerceLuaToJava;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -43,12 +44,9 @@ public class LuaHelper {
     }
 
     static LuaTable coerce(LuaEvaluator evaluator, Class<?> cls, Object obj) {
-        LuaObject object = new LuaObject(obj);
+        LuaObject object = new LuaObject(evaluator, obj, Arrays.stream(cls.getFields()).filter(f->obj != null || Modifier.isStatic(f.getModifiers())).toArray(Field[]::new));
         if(obj != null && cls.isArray()) {
             int length = Array.getLength(obj);
-            for(int i = 0; i < length; i++) {
-                object.set(i + 1, toLua(evaluator, Array.get(obj, i)));
-            }
             object.set("clone", new ZeroArgFunction() {
                 @Override
                 public LuaValue call() {

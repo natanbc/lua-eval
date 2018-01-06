@@ -25,6 +25,7 @@ public class LuaObject extends LuaTable {
         this.arrayClass = instance != null && instance.getClass().isArray() ? instance.getClass() : null;
         this.fields = fields;
         AccessibleObject.setAccessible(fields, true);
+        ((EvaluatorGlobals)evaluator.getGlobals()).hooks.forEach(hook->hook.onObjectWrapped(this, instance));
     }
 
     public Object getJavaObject() {

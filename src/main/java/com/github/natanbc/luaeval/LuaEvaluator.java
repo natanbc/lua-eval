@@ -29,11 +29,11 @@ import java.util.List;
 public class LuaEvaluator {
     private final List<AccessibleObject> blocked = new LinkedList<>();
     private final ClassLoader classLoader;
-    private final Globals globals;
+    private final EvaluatorGlobals globals;
 
     public LuaEvaluator(ClassLoader loader, int cycleLimit) {
         this.classLoader = loader;
-        Globals globals = new EvaluatorGlobals(this);
+        EvaluatorGlobals globals = new EvaluatorGlobals(this);
         globals.load(new JseBaseLib());
         globals.load(new PackageLib());
         globals.load(new Bit32Lib());
@@ -86,6 +86,11 @@ public class LuaEvaluator {
         return this;
     }
 
+    public LuaEvaluator addConversionHook(ConversionHook hook) {
+        globals.addConversionHook(hook);
+        return this;
+    }
+
     public LuaValue eval(String code) {
         return globals.load(code).call();
     }
@@ -95,7 +100,8 @@ public class LuaEvaluator {
         if(value instanceof LuaValue) {
             globals.set(key, (LuaValue)value);
         } else if(value instanceof Boolean || value instanceof Byte || value instanceof Short || value instanceof Character ||
-                value instanceof Integer || value instanceof Float || value instanceof Long || value instanceof Double) {
+                value instanceof Integer || value instanceof Float || value instanceof Long || value instanceof Double ||
+                value instanceof String) {
             globals.set(key, CoerceJavaToLua.coerce(value));
         } else {
             globals.set(key, LuaHelper.coerce(this, value));
@@ -108,7 +114,8 @@ public class LuaEvaluator {
         if(value instanceof LuaValue) {
             globals.set(key, (LuaValue)value);
         } else if(value instanceof Boolean || value instanceof Byte || value instanceof Short || value instanceof Character ||
-                value instanceof Integer || value instanceof Float || value instanceof Long || value instanceof Double) {
+                value instanceof Integer || value instanceof Float || value instanceof Long || value instanceof Double ||
+                value instanceof String) {
             globals.set(key, CoerceJavaToLua.coerce(value));
         } else {
             globals.set(key, LuaHelper.coerce(this, value));
@@ -123,6 +130,18 @@ public class LuaEvaluator {
 
     public LuaEvaluator remove(int key) {
         globals.set(key, LuaValue.NIL);
+        return this;
+    }
+
+    public LuaEvaluator setObject(String key, Object value) {
+        if(value == null) return remove(key);
+        globals.set(key, LuaHelper.coerce(this, value));
+        return this;
+    }
+
+    public LuaEvaluator setObject(int key, Object value) {
+        if(value == null) return remove(key);
+        globals.set(key, LuaHelper.coerce(this, value));
         return this;
     }
 
